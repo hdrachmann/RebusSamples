@@ -14,18 +14,19 @@ namespace Common
                 {
                     if (role == EndpointRole.Client)
                     {
-                        t.UseMsmqAsOneWayClient();
+                        t.UseSqlServerAsOneWayClient(Config.ConnectionString("RebusDatabase"));
                     }
                     else
                     {
-                        t.UseMsmq(Config.AppSetting("QueueName"));
+                        t.UseSqlServer(Config.ConnectionString("RebusDatabase"), Config.AppSetting("QueueName"));
+
                     }
                 })
                 .Subscriptions(s =>
                 {
                     var subscriptionsTableName = Config.AppSetting("SubscriptionsTableName");
 
-                    s.StoreInSqlServer("RebusDatabase", subscriptionsTableName, isCentralized: true);
+                    s.StoreInSqlServer(Config.ConnectionString("RebusDatabase"), subscriptionsTableName, isCentralized: true);
                 })
                 .Sagas(s =>
                 {
@@ -35,17 +36,9 @@ namespace Common
                     var indexTableName = Config.AppSetting("SagaIndexTableName");
 
                     // store sagas in SQL Server to make them persistent and survive restarts
-                    s.StoreInSqlServer("RebusDatabase", dataTableName, indexTableName);
-                })
-                .Timeouts(t =>
-                {
-                    if (role == EndpointRole.Client) return;
-
-                    var tableName = Config.AppSetting("TimeoutsTableName");
-
-                    // store timeouts in SQL Server to make them persistent and survive restarts
-                    t.StoreInSqlServer("RebusDatabase", tableName);
+                    s.StoreInSqlServer(Config.ConnectionString("RebusDatabase"), dataTableName, indexTableName);
                 });
+             
 
             return configurer;
         }
